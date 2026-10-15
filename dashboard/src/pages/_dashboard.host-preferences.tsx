@@ -251,7 +251,7 @@ export default function HostPreferencesPage() {
                         <div
                           className={`flex min-w-0 flex-col gap-2 rounded-md border p-2.5 transition-colors sm:p-3 ${highlighted === host.id ? 'bg-accent/70' : ''} ${!host.enabled ? 'opacity-70' : ''}`}
                         >
-                          <div className="flex min-w-0 flex-col gap-1">
+                          <div className="flex min-w-0 flex-col gap-2">
                             <Input
                               aria-label={`${t('hostPreferences.hostName', { defaultValue: 'Host name' })}: ${host.default_remark}`}
                               value={host.remark}
