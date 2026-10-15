@@ -101,7 +101,7 @@ export default function HostPreferencesPage() {
               if (element) rowRefs.current.set(host.id, element)
               else rowRefs.current.delete(host.id)
             }}
-            className="flex items-center gap-2 rounded-md border p-3"
+            className="flex items-start gap-2 rounded-md border p-3"
           >
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <Input
@@ -116,19 +116,21 @@ export default function HostPreferencesPage() {
               />
               {invalidRemark && <span className="text-destructive text-xs">{t('hostPreferences.remarkRequired', { defaultValue: 'A custom server name cannot be empty' })}</span>}
             </div>
-            {host.is_customized && (
-              <Button
-                variant="outline"
-                size="icon"
-                aria-label="Use shared server name"
-                title={t('hostPreferences.reset', { defaultValue: 'Use shared name' })}
-                onClick={() => resetRemark(host)}
-              >
-                <RotateCcw />
-              </Button>
-            )}
-            <Button variant="outline" size="icon" aria-label="Move up" disabled={index === 0} onClick={() => move(index, -1)}><ArrowUp /></Button>
-            <Button variant="outline" size="icon" aria-label="Move down" disabled={index === hosts.length - 1} onClick={() => move(index, 1)}><ArrowDown /></Button>
+            <div className="flex shrink-0 items-center gap-2">
+              {host.is_customized && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="Use shared server name"
+                  title={t('hostPreferences.reset', { defaultValue: 'Use shared name' })}
+                  onClick={() => resetRemark(host)}
+                >
+                  <RotateCcw />
+                </Button>
+              )}
+              <Button variant="outline" size="icon" aria-label="Move up" disabled={index === 0} onClick={() => move(index, -1)}><ArrowUp /></Button>
+              <Button variant="outline" size="icon" aria-label="Move down" disabled={index === hosts.length - 1} onClick={() => move(index, 1)}><ArrowDown /></Button>
+            </div>
           </div>
           )
         })}
