@@ -201,12 +201,11 @@ export default function HostPreferencesPage() {
   return (
     <div className="flex w-full flex-col items-start gap-2 pb-8">
       <div className="w-full">
-        <PageHeader title="hostPreferences.title" description="hostPreferences.description" />
+        <PageHeader title="hostPreferences.title" description="hostPreferences.description" titleAction={<VariablesPopover includeProtocolTransport side="bottom" align="end" />} />
         <div className="flex items-start gap-2 px-4 pb-3">
           <p className="text-muted-foreground min-w-0 flex-1 text-sm">
             {t('hostPreferences.subscriptionNote', { defaultValue: 'Names, order, and enabled hosts are reflected in subscription links and copied configurations for your users.' })}
           </p>
-          <VariablesPopover includeProtocolTransport side="bottom" align="end" />
         </div>
         <Separator />
       </div>
