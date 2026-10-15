@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch'
 import { VariablesPopover } from '@/components/ui/variables-popover'
 import { fetcher } from '@/service/http'
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
-import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowDown, ArrowUp, Grip, RotateCcw, Save, Search } from 'lucide-react'
@@ -236,8 +236,8 @@ export default function HostPreferencesPage() {
           <p>{t('loading', { defaultValue: 'Loading...' })}</p>
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={visibleHosts.map(host => host.id)} strategy={verticalListSortingStrategy}>
-              <div className="space-y-2">
+            <SortableContext items={visibleHosts.map(host => host.id)} strategy={rectSortingStrategy}>
+              <div className="grid grid-cols-1 gap-2 lg:grid-cols-2 2xl:grid-cols-3">
                 {visibleHosts.map(host => {
                   const invalidRemark = !host.remark.trim()
                   const customized = host.remark !== host.default_remark
@@ -331,7 +331,9 @@ export default function HostPreferencesPage() {
                     </SortableHostRow>
                   )
                 })}
-                {!visibleHosts.length && <p className="text-muted-foreground py-6 text-center text-sm">{t('hostPreferences.noResults', { defaultValue: 'No hosts match your search' })}</p>}
+                {!visibleHosts.length && (
+                  <p className="text-muted-foreground col-span-full py-6 text-center text-sm">{t('hostPreferences.noResults', { defaultValue: 'No hosts match your search' })}</p>
+                )}
               </div>
             </SortableContext>
           </DndContext>
