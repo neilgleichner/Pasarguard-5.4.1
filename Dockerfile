@@ -33,8 +33,17 @@ ENV PATH="/code/.venv/bin:$PATH"
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
+    bash \
+    unzip \
     && update-ca-certificates \
     && rm -rf /var/lib/apt/lists/*
+
+# The dashboard is built at application startup so it can use runtime settings.
+# Keep Bun and the locked dashboard dependencies in the image for that build.
+ENV PATH="/root/.bun/bin:/code/.venv/bin:$PATH"
+RUN curl -fsSL https://bun.sh/install | bash \
+    && cd /code/dashboard \
+    && bun install --frozen-lockfile
 
 COPY cli_wrapper.sh /usr/bin/pasarguard-cli
 RUN chmod +x /usr/bin/pasarguard-cli
