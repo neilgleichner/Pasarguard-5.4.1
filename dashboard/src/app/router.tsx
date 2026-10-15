@@ -26,6 +26,7 @@ const BulkGroupsPage = lazyWithChunkRecovery(() => import('../pages/_dashboard.b
 const BulkProxyPage = lazyWithChunkRecovery(() => import('../pages/_dashboard.bulk.proxy'))
 const Groups = lazyWithChunkRecovery(() => import('../pages/_dashboard.groups'))
 const Hosts = lazyWithChunkRecovery(() => import('../pages/_dashboard.hosts'))
+const HostPreferences = lazyWithChunkRecovery(() => import('../pages/_dashboard.host-preferences'))
 const Nodes = lazyWithChunkRecovery(() => import('../pages/_dashboard.nodes'))
 const NodesPage = lazyWithChunkRecovery(() => import('../pages/_dashboard.nodes._index'))
 const NodeLogs = lazyWithChunkRecovery(() => import('../pages/_dashboard.nodes.logs'))
@@ -135,6 +136,10 @@ export const router = createHashRouter([
             <Hosts />
           </Suspense>
         ),
+      },
+      {
+        path: '/host-preferences',
+        element: <Suspense fallback={<LoadingSpinner />}><HostPreferences /></Suspense>,
       },
       {
         path: '/nodes',

@@ -1,17 +1,103 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
+from sqlalchemy import select
 
 from app.db import AsyncSession, get_db
+from app.db.models import Admin
 from app.models.admin import AdminDetails
-from app.models.host import BaseHost, BulkHostsActionResponse, BulkHostSelection, CreateHost, RemoveHostsResponse
+from app.models.host import (
+    BaseHost,
+    BulkHostsActionResponse,
+    BulkHostSelection,
+    CreateHost,
+    HostListQuery,
+    RemoveHostsResponse,
+)
 from app.operation import OperatorType
 from app.operation.host import HostOperation
 from app.utils import responses
 
-from .authentication import require_permission
+from .authentication import get_current, require_permission
 from .dependencies import get_host_list_query
 
 host_operator = HostOperation(operator_type=OperatorType.API)
 router = APIRouter(tags=["Host"], prefix="/api/host", responses={401: responses._401, 403: responses._403})
+
+
+class HostPreference(BaseModel):
+    id: int
+    remark: str = Field(min_length=1, max_length=256)
+    default_remark: str
+    priority: int = Field(ge=0, le=1000000)
+    is_customized: bool = False
+
+
+class HostPreferenceUpdate(BaseModel):
+    id: int
+    remark: str | None = Field(default=None, min_length=1, max_length=256)
+    priority: int = Field(ge=0, le=1000000)
+
+
+async def _operator_account(db: AsyncSession, admin: AdminDetails) -> Admin:
+    if admin.id is None or admin.role.is_owner or admin.role.name != "operator":
+        raise HTTPException(status_code=403, detail="Operator role required")
+    account = await db.scalar(select(Admin).where(Admin.id == admin.id))
+    if account is None:
+        raise HTTPException(status_code=403, detail="Operator account required")
+    return account
+
+
+def _apply_host_preferences(hosts: list[BaseHost], account: Admin) -> list[BaseHost]:
+    saved_hosts = (account.host_preferences or {}).get("hosts", {})
+    personalized = [
+        host.model_copy(
+            update={
+                "remark": saved_hosts.get(str(host.id), {}).get("remark") or host.remark,
+                "priority": saved_hosts.get(str(host.id), {}).get("priority", host.priority),
+            }
+        )
+        for host in hosts
+    ]
+    return sorted(personalized, key=lambda item: (item.priority, item.id))
+
+
+@router.get("s/preferences", response_model=list[HostPreference])
+async def get_host_preferences(db: AsyncSession = Depends(get_db), admin: AdminDetails = Depends(get_current)):
+    account = await _operator_account(db, admin)
+    hosts = await host_operator.get_hosts(db, HostListQuery())
+    saved = account.host_preferences or {}
+    saved_hosts = saved.get("hosts", {})
+    preferences = [
+        HostPreference(
+            id=host.id,
+            remark=saved_hosts.get(str(host.id), {}).get("remark") or host.remark,
+            default_remark=host.remark,
+            priority=saved_hosts.get(str(host.id), {}).get("priority", host.priority),
+            is_customized=bool(saved_hosts.get(str(host.id), {}).get("remark")),
+        )
+        for host in hosts
+    ]
+    return sorted(preferences, key=lambda item: (item.priority, item.id))
+
+
+@router.put("s/preferences", response_model=list[HostPreference])
+async def save_host_preferences(
+    preferences: list[HostPreferenceUpdate], db: AsyncSession = Depends(get_db), admin: AdminDetails = Depends(get_current)
+):
+    account = await _operator_account(db, admin)
+    hosts = await host_operator.get_hosts(db, HostListQuery())
+    current_ids = {host.id for host in hosts}
+    submitted_ids = [item.id for item in preferences]
+    if len(submitted_ids) != len(set(submitted_ids)) or set(submitted_ids) != current_ids:
+        raise HTTPException(status_code=400, detail="Submit each current host exactly once")
+    account.host_preferences = {
+        "hosts": {
+            str(item.id): {"remark": item.remark, "priority": item.priority}
+            for item in preferences
+        }
+    }
+    await db.commit()
+    return await get_host_preferences(db, admin)
 
 
 @router.get("/{host_id}", response_model=BaseHost)
@@ -28,12 +114,16 @@ async def get_host(
 async def get_hosts(
     query=Depends(get_host_list_query),
     db: AsyncSession = Depends(get_db),
-    _: AdminDetails = Depends(require_permission("hosts", "read")),
+    admin: AdminDetails = Depends(require_permission("hosts", "read")),
 ):
     """
     Get proxy hosts.
     """
-    return await host_operator.get_hosts(db=db, query=query)
+    hosts = await host_operator.get_hosts(db=db, query=query)
+    if admin.role.name == "operator" and not admin.role.is_owner:
+        account = await _operator_account(db, admin)
+        return _apply_host_preferences(hosts, account)
+    return hosts
 
 
 @router.post("/", response_model=BaseHost, status_code=status.HTTP_201_CREATED)

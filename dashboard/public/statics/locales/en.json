@@ -3772,5 +3772,12 @@
     "updateCommandLabel": "Connect via SSH and run:",
     "closeBanner": "Close update notification",
     "needsUpdate": "Needs update"
+  },
+  "hostPreferences": {
+    "title": "My Hosts",
+    "description": "Change the server names and order shown to you. These changes only affect your account.",
+    "save": "Save changes",
+    "saved": "Host preferences saved",
+    "saveFailed": "Could not save host preferences"
   }
 }

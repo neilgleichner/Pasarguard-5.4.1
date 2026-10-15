@@ -425,6 +425,18 @@ async def process_inbounds_and_tags(
     proxy_settings = user.proxy_settings.dict()
     proxy_settings["_user_id"] = user.id
     hosts = await filter_hosts(list((await host_manager.get_hosts()).values()), user.status)
+    host_preferences = (user.admin.host_preferences or {}).get("hosts", {}) if user.admin else {}
+    if host_preferences:
+        hosts = [
+            host.model_copy(
+                update={
+                    "remark": host_preferences.get(str(host.id), {}).get("remark") or host.remark,
+                    "priority": host_preferences.get(str(host.id), {}).get("priority", host.priority),
+                }
+            )
+            for host in hosts
+        ]
+        hosts.sort(key=lambda host: (host.priority, host.id))
     if randomize_order and len(hosts) > 1:
         random.shuffle(hosts)
 

@@ -6,6 +6,8 @@ from tests.api.helpers import (
     auth_headers,
     create_client_template,
     create_core,
+    create_admin,
+    delete_admin,
     delete_client_template,
     delete_core,
     get_inbounds,
@@ -75,6 +77,42 @@ def test_host_get(access_token):
     assert any(host["remark"] == payload["remark"] for host in response.json())
     client.delete(f"/api/host/{host_id}", headers={"Authorization": f"Bearer {access_token}"})
     delete_core(access_token, core["id"])
+
+
+def test_host_preferences_are_operator_only(access_token):
+    """The personalization endpoints must not grant host editing to other roles."""
+    assert client.get("/api/hosts/preferences", headers=auth_headers(access_token)).status_code == status.HTTP_403_FORBIDDEN
+    assert client.put("/api/hosts/preferences", headers=auth_headers(access_token), json=[]).status_code == status.HTTP_403_FORBIDDEN
+
+
+def test_operator_can_save_private_host_preferences(access_token):
+    """Operator preferences are account scoped and do not modify shared host records."""
+    operator = create_admin(access_token, role_id=3)
+    operator_login = client.post(
+        "/api/admin/token",
+        data={"username": operator["username"], "password": operator["password"], "grant_type": "password"},
+    )
+    operator_headers = auth_headers(operator_login.json()["access_token"])
+    try:
+        baseline = client.get("/api/hosts", headers=auth_headers(access_token)).json()
+        preferences_response = client.get("/api/hosts/preferences", headers=operator_headers)
+        assert preferences_response.status_code == status.HTTP_200_OK
+        preferences = preferences_response.json()
+        if preferences:
+            preferences[0]["remark"] = unique_name("private_host_name")
+            preferences[0]["is_customized"] = True
+        saved = client.put(
+            "/api/hosts/preferences",
+            headers=operator_headers,
+            json=[
+                {"id": host["id"], "remark": host["remark"] if host["is_customized"] else None, "priority": index}
+                for index, host in enumerate(preferences)
+            ],
+        )
+        assert saved.status_code == status.HTTP_200_OK
+        assert client.get("/api/hosts", headers=auth_headers(access_token)).json() == baseline
+    finally:
+        delete_admin(access_token, operator["username"])
 
 
 def test_host_update(access_token):
