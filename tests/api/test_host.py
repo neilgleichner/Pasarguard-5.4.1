@@ -4,9 +4,9 @@ from app.utils.crypto import generate_wireguard_keypair
 from tests.api import client
 from tests.api.helpers import (
     auth_headers,
+    create_admin,
     create_client_template,
     create_core,
-    create_admin,
     delete_admin,
     delete_client_template,
     delete_core,
@@ -81,8 +81,14 @@ def test_host_get(access_token):
 
 def test_host_preferences_are_operator_only(access_token):
     """The personalization endpoints must not grant host editing to other roles."""
-    assert client.get("/api/hosts/preferences", headers=auth_headers(access_token)).status_code == status.HTTP_403_FORBIDDEN
-    assert client.put("/api/hosts/preferences", headers=auth_headers(access_token), json=[]).status_code == status.HTTP_403_FORBIDDEN
+    assert (
+        client.get("/api/hosts/preferences", headers=auth_headers(access_token)).status_code
+        == status.HTTP_403_FORBIDDEN
+    )
+    assert (
+        client.put("/api/hosts/preferences", headers=auth_headers(access_token), json=[]).status_code
+        == status.HTTP_403_FORBIDDEN
+    )
 
 
 def test_operator_can_save_private_host_preferences(access_token):
@@ -103,23 +109,29 @@ def test_operator_can_save_private_host_preferences(access_token):
                 "/api/hosts/preferences",
                 headers=operator_headers,
                 json=[{"id": preferences[0]["id"], "remark": "   ", "priority": preferences[0]["priority"]}]
-                + [
-                    {"id": host["id"], "remark": None, "priority": host["priority"]}
-                    for host in preferences[1:]
-                ],
+                + [{"id": host["id"], "remark": None, "priority": host["priority"]} for host in preferences[1:]],
             )
             assert invalid_save.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
             preferences[0]["remark"] = unique_name("private_host_name")
             preferences[0]["is_customized"] = True
+            preferences[0]["enabled"] = False
         saved = client.put(
             "/api/hosts/preferences",
             headers=operator_headers,
             json=[
-                {"id": host["id"], "remark": host["remark"] if host["is_customized"] else None, "priority": index}
+                {
+                    "id": host["id"],
+                    "remark": host["remark"] if host["is_customized"] else None,
+                    "priority": index,
+                    "enabled": host.get("enabled", True),
+                }
                 for index, host in enumerate(preferences)
             ],
         )
         assert saved.status_code == status.HTTP_200_OK
+        if preferences:
+            saved_hosts = {host["id"]: host for host in saved.json()}
+            assert saved_hosts[preferences[0]["id"]]["enabled"] is False
         assert client.get("/api/hosts", headers=auth_headers(access_token)).json() == baseline
     finally:
         delete_admin(access_token, operator["username"])

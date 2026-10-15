@@ -29,13 +29,16 @@ class HostPreference(BaseModel):
     remark: str = Field(min_length=1, max_length=256)
     default_remark: str
     priority: int = Field(ge=0, le=1000000)
+    default_priority: int
     is_customized: bool = False
+    enabled: bool = True
 
 
 class HostPreferenceUpdate(BaseModel):
     id: int
     remark: str | None = Field(default=None, min_length=1, max_length=256)
     priority: int = Field(ge=0, le=1000000)
+    enabled: bool = True
 
     @field_validator("remark")
     @classmethod
@@ -67,6 +70,7 @@ def _apply_host_preferences(hosts: list[BaseHost], account: Admin) -> list[BaseH
             }
         )
         for host in hosts
+        if saved_hosts.get(str(host.id), {}).get("enabled", True)
     ]
     return sorted(personalized, key=lambda item: (item.priority, item.id))
 
@@ -83,7 +87,9 @@ async def get_host_preferences(db: AsyncSession = Depends(get_db), admin: AdminD
             remark=saved_hosts.get(str(host.id), {}).get("remark") or host.remark,
             default_remark=host.remark,
             priority=saved_hosts.get(str(host.id), {}).get("priority", host.priority),
+            default_priority=host.priority,
             is_customized=bool(saved_hosts.get(str(host.id), {}).get("remark")),
+            enabled=saved_hosts.get(str(host.id), {}).get("enabled", True),
         )
         for host in hosts
     ]
@@ -92,7 +98,9 @@ async def get_host_preferences(db: AsyncSession = Depends(get_db), admin: AdminD
 
 @router.put("s/preferences", response_model=list[HostPreference])
 async def save_host_preferences(
-    preferences: list[HostPreferenceUpdate], db: AsyncSession = Depends(get_db), admin: AdminDetails = Depends(get_current)
+    preferences: list[HostPreferenceUpdate],
+    db: AsyncSession = Depends(get_db),
+    admin: AdminDetails = Depends(get_current),
 ):
     account = await _operator_account(db, admin)
     hosts = await host_operator.get_hosts(db, HostListQuery())
@@ -102,7 +110,7 @@ async def save_host_preferences(
         raise HTTPException(status_code=400, detail="Submit each current host exactly once")
     account.host_preferences = {
         "hosts": {
-            str(item.id): {"remark": item.remark, "priority": item.priority}
+            str(item.id): {"remark": item.remark, "priority": item.priority, "enabled": item.enabled}
             for item in preferences
         }
     }

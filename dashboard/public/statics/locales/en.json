@@ -3776,9 +3776,22 @@
   "hostPreferences": {
     "title": "My Hosts",
     "description": "Change the server names and order shown to you. These changes only affect your account.",
+    "subscriptionNote": "Names, order, and enabled hosts are reflected in your users’ subscription links and copied configurations.",
     "save": "Save changes",
     "saved": "Host preferences saved",
     "saveFailed": "Could not save host preferences",
-    "remarkRequired": "A custom server name cannot be empty"
+    "remarkRequired": "A server name cannot be empty",
+    "custom": "Custom",
+    "originalName": "Original: {{name}}",
+    "hostName": "Host name",
+    "enabled": "Host enabled",
+    "resetName": "Reset name",
+    "resetOrder": "Reset order",
+    "resetAll": "Reset all",
+    "resetAllConfirm": "Reset all custom host names, order, and enabled states?",
+    "search": "Search hosts",
+    "noResults": "No hosts match your search",
+    "moveUp": "Move up",
+    "moveDown": "Move down"
   }
 }

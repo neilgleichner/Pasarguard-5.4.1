@@ -103,8 +103,11 @@ def test_sub_config_cache_key_includes_operator_host_preferences():
     first_key = config_cache.make_sub_config_key(user, "links", False, False)
     user.admin.host_preferences["hosts"]["1"]["remark"] = "Updated name"
     second_key = config_cache.make_sub_config_key(user, "links", False, False)
+    user.admin.host_preferences["hosts"]["1"]["enabled"] = False
+    third_key = config_cache.make_sub_config_key(user, "links", False, False)
 
     assert first_key != second_key
+    assert second_key != third_key
 
 
 @pytest.mark.asyncio
@@ -186,7 +189,9 @@ async def test_process_inbounds_uses_operator_host_names_and_order(monkeypatch: 
             priority=1,
         ),
     ]
-    monkeypatch.setattr("app.subscription.share.host_manager.get_hosts", AsyncMock(return_value={1: hosts[0], 2: hosts[1]}))
+    monkeypatch.setattr(
+        "app.subscription.share.host_manager.get_hosts", AsyncMock(return_value={1: hosts[0], 2: hosts[1]})
+    )
     monkeypatch.setattr("app.subscription.share.filter_hosts", AsyncMock(side_effect=lambda values, _status: values))
     monkeypatch.setattr("app.subscription.share.process_host", AsyncMock(side_effect=lambda host, *_args: (host, {})))
 
@@ -205,12 +210,12 @@ async def test_process_inbounds_uses_operator_host_names_and_order(monkeypatch: 
         id=15,
         status=UserStatus.active,
         inbounds=["in1"],
-        proxy_settings=SimpleNamespace(dict=lambda: {}),
+        proxy_settings=SimpleNamespace(dict=dict),
         admin=SimpleNamespace(
             host_preferences={
                 "hosts": {
                     "1": {"remark": "Private A", "priority": 1},
-                    "2": {"remark": None, "priority": 0},
+                    "2": {"remark": None, "priority": 0, "enabled": False},
                 }
             }
         ),
@@ -225,4 +230,4 @@ async def test_process_inbounds_uses_operator_host_names_and_order(monkeypatch: 
     )
 
     assert result == "rendered"
-    assert config.items == [("Shared B", 2), ("Private A", 1)]
+    assert config.items == [("Private A", 1)]

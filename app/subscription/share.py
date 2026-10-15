@@ -435,6 +435,7 @@ async def process_inbounds_and_tags(
                 }
             )
             for host in hosts
+            if host_preferences.get(str(host.id), {}).get("enabled", True)
         ]
         hosts.sort(key=lambda host: (host.priority, host.id))
     if randomize_order and len(hosts) > 1 and not host_preferences:

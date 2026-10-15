@@ -37,6 +37,7 @@ def make_sub_config_key(
                 str(host_id),
                 preference.get("remark"),
                 preference.get("priority"),
+                preference.get("enabled", True),
             )
             for host_id, preference in hosts.items()
         )
