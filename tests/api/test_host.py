@@ -131,7 +131,25 @@ def test_operator_can_save_private_host_preferences(access_token):
         assert saved.status_code == status.HTTP_200_OK
         if preferences:
             saved_hosts = {host["id"]: host for host in saved.json()}
-            assert saved_hosts[preferences[0]["id"]]["enabled"] is False
+            disabled_host = saved_hosts[preferences[0]["id"]]
+            assert disabled_host["enabled"] is False
+            locked_save = client.put(
+                "/api/hosts/preferences",
+                headers=operator_headers,
+                json=[
+                    {
+                        "id": host["id"],
+                        "remark": "attempted change while disabled" if host["id"] == disabled_host["id"] else None,
+                        "priority": 10000 + index,
+                        "enabled": host["id"] != disabled_host["id"],
+                    }
+                    for index, host in enumerate(saved_hosts.values())
+                ],
+            )
+            assert locked_save.status_code == status.HTTP_200_OK
+            locked_host = next(host for host in locked_save.json() if host["id"] == disabled_host["id"])
+            assert locked_host["remark"] == disabled_host["remark"]
+            assert locked_host["priority"] == disabled_host["priority"]
         assert client.get("/api/hosts", headers=auth_headers(access_token)).json() == baseline
     finally:
         delete_admin(access_token, operator["username"])

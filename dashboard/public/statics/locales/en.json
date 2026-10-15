@@ -3785,8 +3785,6 @@
     "originalName": "Original: {{name}}",
     "hostName": "Host name",
     "enabled": "Host enabled",
-    "active": "Active",
-    "inactive": "Inactive",
     "resetName": "Reset name",
     "resetOrder": "Reset order",
     "resetAll": "Reset all",

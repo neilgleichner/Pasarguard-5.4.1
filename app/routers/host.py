@@ -108,12 +108,21 @@ async def save_host_preferences(
     submitted_ids = [item.id for item in preferences]
     if len(submitted_ids) != len(set(submitted_ids)) or set(submitted_ids) != current_ids:
         raise HTTPException(status_code=400, detail="Submit each current host exactly once")
-    account.host_preferences = {
-        "hosts": {
-            str(item.id): {"remark": item.remark, "priority": item.priority, "enabled": item.enabled}
-            for item in preferences
+    saved_hosts = (account.host_preferences or {}).get("hosts", {})
+    current_hosts = {host.id: host for host in hosts}
+    updated_hosts = {}
+    for item in preferences:
+        host_id = str(item.id)
+        previous = saved_hosts.get(host_id, {})
+        remains_disabled = previous.get("enabled", True) is False and not item.enabled
+        updated_hosts[host_id] = {
+            "remark": previous.get("remark") if remains_disabled else item.remark,
+            "priority": previous.get("priority", current_hosts[item.id].priority)
+            if remains_disabled
+            else item.priority,
+            "enabled": item.enabled,
         }
-    }
+    account.host_preferences = {"hosts": updated_hosts}
     await db.commit()
     return await get_host_preferences(db, admin)
 

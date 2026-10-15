@@ -15,10 +15,20 @@ import { toast } from 'sonner'
 
 type HostPreference = { id: number; remark: string; default_remark: string; priority: number; default_priority: number; is_customized: boolean; enabled: boolean }
 
-function SortableHostRow({ id, rowRef, children }: { id: number; rowRef: (element: HTMLDivElement | null) => void; children: (dragHandle: ReactNode) => ReactNode }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+function SortableHostRow({ id, disabled, rowRef, children }: { id: number; disabled: boolean; rowRef: (element: HTMLDivElement | null) => void; children: (dragHandle: ReactNode) => ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled })
   const dragHandle = (
-    <Button type="button" variant="outline" size="icon" className="h-8 w-8 shrink-0 touch-none" aria-label="Drag to reorder host" title="Drag to reorder" {...attributes} {...listeners}>
+    <Button
+      type="button"
+      variant="outline"
+      size="icon"
+      className="h-8 w-8 shrink-0 touch-none"
+      aria-label="Drag to reorder host"
+      title="Drag to reorder"
+      disabled={disabled}
+      {...attributes}
+      {...listeners}
+    >
       <Grip className="h-4 w-4" />
     </Button>
   )
@@ -88,6 +98,8 @@ export default function HostPreferencesPage() {
     const term = search.trim().toLocaleLowerCase()
     return term ? hosts.filter(host => `${host.remark} ${host.default_remark}`.toLocaleLowerCase().includes(term)) : hosts
   }, [hosts, search])
+  const movableVisibleHosts = useMemo(() => visibleHosts.filter(host => host.enabled), [visibleHosts])
+  const hasDisabledHosts = hosts.some(host => !host.enabled)
 
   const markMoved = (id: number) => {
     setHighlighted(id)
@@ -96,11 +108,11 @@ export default function HostPreferencesPage() {
   }
 
   const reorder = (fromId: number, toId: number) => {
-    const visibleIds = visibleHosts.map(host => host.id)
+    const visibleIds = movableVisibleHosts.map(host => host.id)
     const fromIndex = visibleIds.indexOf(fromId)
     const toIndex = visibleIds.indexOf(toId)
     if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return
-    const reorderedVisible = arrayMove(visibleHosts, fromIndex, toIndex)
+    const reorderedVisible = arrayMove(movableVisibleHosts, fromIndex, toIndex)
     capturePositions()
     setHosts(current => {
       const visiblePositions = current.flatMap((host, index) => (visibleIds.includes(host.id) ? [index] : []))
@@ -119,8 +131,8 @@ export default function HostPreferencesPage() {
   }
 
   const move = (host: HostPreference, delta: number) => {
-    const index = visibleHosts.findIndex(item => item.id === host.id)
-    const target = visibleHosts[index + delta]
+    const index = movableVisibleHosts.findIndex(item => item.id === host.id)
+    const target = movableVisibleHosts[index + delta]
     if (target) reorder(host.id, target.id)
   }
 
@@ -132,12 +144,11 @@ export default function HostPreferencesPage() {
 
   const resetOrder = () => {
     capturePositions()
-    setHosts(current =>
-      [...current]
-        .map(host => ({ ...host, priority: host.default_priority }))
-        .sort((a, b) => a.priority - b.priority || a.id - b.id)
-        .map((host, priority) => ({ ...host, priority })),
-    )
+    setHosts(current => {
+      const enabledHosts = current.filter(host => host.enabled).sort((a, b) => a.default_priority - b.default_priority || a.id - b.id)
+      let enabledIndex = 0
+      return current.map(host => (host.enabled ? { ...enabledHosts[enabledIndex++], priority: host.priority } : host))
+    })
   }
 
   const resetAll = () => {
@@ -212,7 +223,7 @@ export default function HostPreferencesPage() {
             <ArrowUp className="h-4 w-4 shrink-0" />
             {t('hostPreferences.resetOrder', { defaultValue: 'Reset order' })}
           </Button>
-          <Button type="button" variant="outline" size="sm" className="w-full gap-2 px-2 text-xs whitespace-nowrap sm:text-sm" onClick={resetAll}>
+          <Button type="button" variant="outline" size="sm" className="w-full gap-2 px-2 text-xs whitespace-nowrap sm:text-sm" onClick={resetAll} disabled={hasDisabledHosts}>
             <RotateCcw className="h-4 w-4 shrink-0" />
             {t('hostPreferences.resetAll', { defaultValue: 'Reset all' })}
           </Button>
@@ -223,13 +234,14 @@ export default function HostPreferencesPage() {
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={visibleHosts.map(host => host.id)} strategy={verticalListSortingStrategy}>
               <div className="space-y-2">
-                {visibleHosts.map((host, visibleIndex) => {
+                {visibleHosts.map(host => {
                   const invalidRemark = !host.remark.trim()
                   const customized = host.remark !== host.default_remark
                   return (
                     <SortableHostRow
                       key={host.id}
                       id={host.id}
+                      disabled={!host.enabled}
                       rowRef={element => {
                         if (element) rowRefs.current.set(host.id, element)
                         else rowRefs.current.delete(host.id)
@@ -244,6 +256,7 @@ export default function HostPreferencesPage() {
                               aria-label={`${t('hostPreferences.hostName', { defaultValue: 'Host name' })}: ${host.default_remark}`}
                               value={host.remark}
                               maxLength={256}
+                              disabled={!host.enabled}
                               placeholder={host.default_remark}
                               isError={invalidRemark}
                               aria-invalid={invalidRemark}
@@ -266,7 +279,7 @@ export default function HostPreferencesPage() {
                                 className="h-8 w-8"
                                 aria-label={t('hostPreferences.moveUp', { defaultValue: 'Move up' })}
                                 title={t('hostPreferences.moveUp', { defaultValue: 'Move up' })}
-                                disabled={visibleIndex === 0}
+                                disabled={!host.enabled || movableVisibleHosts.findIndex(item => item.id === host.id) === 0}
                                 onClick={() => move(host, -1)}
                               >
                                 <ArrowUp className="h-4 w-4" />
@@ -278,7 +291,7 @@ export default function HostPreferencesPage() {
                                 className="h-8 w-8"
                                 aria-label={t('hostPreferences.moveDown', { defaultValue: 'Move down' })}
                                 title={t('hostPreferences.moveDown', { defaultValue: 'Move down' })}
-                                disabled={visibleIndex === visibleHosts.length - 1}
+                                disabled={!host.enabled || movableVisibleHosts.findIndex(item => item.id === host.id) === movableVisibleHosts.length - 1}
                                 onClick={() => move(host, 1)}
                               >
                                 <ArrowDown className="h-4 w-4" />
@@ -286,9 +299,13 @@ export default function HostPreferencesPage() {
                             </div>
                             <div className="flex min-w-0 flex-wrap items-center justify-end gap-x-2 gap-y-1">
                               {customized && (
-                                <span className="bg-primary/10 text-primary inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-1 text-[10px] sm:px-2 sm:text-xs">
-                                  <span className="block size-1.5 rounded-full bg-current sm:hidden" aria-hidden="true" />
-                                  <span>{t('hostPreferences.custom', { defaultValue: 'Custom' })}</span>
+                                <span
+                                  role="img"
+                                  className="bg-primary/10 text-primary inline-flex size-6 shrink-0 items-center justify-center rounded-full"
+                                  aria-label={t('hostPreferences.custom', { defaultValue: 'Custom' })}
+                                  title={t('hostPreferences.custom', { defaultValue: 'Custom' })}
+                                >
+                                  <span className="block size-1.5 rounded-full bg-current" aria-hidden="true" />
                                 </span>
                               )}
                               <div className="flex items-center gap-1.5">
@@ -298,9 +315,6 @@ export default function HostPreferencesPage() {
                                   aria-label={t('hostPreferences.enabled', { defaultValue: 'Host enabled' })}
                                   title={t('hostPreferences.enabled', { defaultValue: 'Host enabled' })}
                                 />
-                                <span className={`text-xs ${host.enabled ? 'text-green-500' : 'text-muted-foreground'}`}>
-                                  {host.enabled ? t('hostPreferences.active', { defaultValue: 'Active' }) : t('hostPreferences.inactive', { defaultValue: 'Inactive' })}
-                                </span>
                               </div>
                               {customized && (
                                 <Button
@@ -308,6 +322,7 @@ export default function HostPreferencesPage() {
                                   variant="outline"
                                   size="icon"
                                   className="h-8 w-8"
+                                  disabled={!host.enabled}
                                   aria-label={t('hostPreferences.resetName', { defaultValue: 'Reset name' })}
                                   title={t('hostPreferences.resetName', { defaultValue: 'Reset name' })}
                                   onClick={() => resetName(host)}
