@@ -195,9 +195,9 @@ export default function HostPreferencesPage() {
         <Separator />
       </div>
       <div className="w-full space-y-3 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="grid w-full grid-cols-2 gap-2">
           {hosts.length > 8 && (
-            <div className="relative min-w-48 flex-1 sm:max-w-sm">
+            <div className="relative col-span-2 min-w-0">
               <Search className="text-muted-foreground absolute start-3 top-2.5 h-4 w-4" />
               <Input
                 value={search}
@@ -208,16 +208,14 @@ export default function HostPreferencesPage() {
               />
             </div>
           )}
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={resetOrder}>
-              <ArrowUp className="mr-2 h-4 w-4" />
-              {t('hostPreferences.resetOrder', { defaultValue: 'Reset order' })}
-            </Button>
-            <Button type="button" variant="outline" size="sm" onClick={resetAll}>
-              <RotateCcw className="mr-2 h-4 w-4" />
-              {t('hostPreferences.resetAll', { defaultValue: 'Reset all' })}
-            </Button>
-          </div>
+          <Button type="button" variant="outline" size="sm" className="w-full gap-2 px-2 text-xs whitespace-nowrap sm:text-sm" onClick={resetOrder}>
+            <ArrowUp className="h-4 w-4 shrink-0" />
+            {t('hostPreferences.resetOrder', { defaultValue: 'Reset order' })}
+          </Button>
+          <Button type="button" variant="outline" size="sm" className="w-full gap-2 px-2 text-xs whitespace-nowrap sm:text-sm" onClick={resetAll}>
+            <RotateCcw className="h-4 w-4 shrink-0" />
+            {t('hostPreferences.resetAll', { defaultValue: 'Reset all' })}
+          </Button>
         </div>
         {isLoading ? (
           <p>{t('loading', { defaultValue: 'Loading...' })}</p>
@@ -239,82 +237,85 @@ export default function HostPreferencesPage() {
                     >
                       {dragHandle => (
                         <div
-                          className={`grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-2 gap-y-2 rounded-md border px-2 py-2 transition-colors sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:gap-3 sm:px-3 ${highlighted === host.id ? 'bg-accent/70' : ''} ${!host.enabled ? 'opacity-70' : ''}`}
+                          className={`flex min-w-0 flex-col gap-2 rounded-md border p-2.5 transition-colors sm:p-3 ${highlighted === host.id ? 'bg-accent/70' : ''} ${!host.enabled ? 'opacity-70' : ''}`}
                         >
-                          <div className="order-2 col-span-2 flex shrink-0 items-center gap-1 sm:order-1 sm:col-span-1">
-                            {dragHandle}
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon"
-                              className="h-8 w-8"
-                              aria-label={t('hostPreferences.moveUp', { defaultValue: 'Move up' })}
-                              title={t('hostPreferences.moveUp', { defaultValue: 'Move up' })}
-                              disabled={visibleIndex === 0}
-                              onClick={() => move(host, -1)}
-                            >
-                              <ArrowUp className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon"
-                              className="h-8 w-8"
-                              aria-label={t('hostPreferences.moveDown', { defaultValue: 'Move down' })}
-                              title={t('hostPreferences.moveDown', { defaultValue: 'Move down' })}
-                              disabled={visibleIndex === visibleHosts.length - 1}
-                              onClick={() => move(host, 1)}
-                            >
-                              <ArrowDown className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          <div className="order-1 col-start-1 row-start-1 flex min-w-0 flex-col gap-1 sm:order-2 sm:col-auto sm:row-auto">
-                            <div className="flex min-w-0 items-center gap-2">
-                              <Input
-                                aria-label={`${t('hostPreferences.hostName', { defaultValue: 'Host name' })}: ${host.default_remark}`}
-                                value={host.remark}
-                                maxLength={256}
-                                placeholder={host.default_remark}
-                                isError={invalidRemark}
-                                aria-invalid={invalidRemark}
-                                onKeyDown={event => onRemarkKeyDown(event, host)}
-                                style={{ fontFamily: 'system-ui, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif' }}
-                                onChange={event => setHosts(current => current.map(item => (item.id === host.id ? { ...item, remark: event.target.value } : item)))}
-                              />
-                              {customized && (
-                                <span className="bg-primary/10 text-primary inline-flex shrink-0 rounded-full px-1.5 py-1 text-[10px] sm:px-2 sm:text-xs">
-                                  <span className="sm:hidden" aria-hidden="true">
-                                    <span className="block size-1.5 rounded-full bg-current" />
-                                  </span>
-                                  <span className="hidden sm:inline">{t('hostPreferences.custom', { defaultValue: 'Custom' })}</span>
-                                </span>
-                              )}
-                            </div>
+                          <div className="flex min-w-0 flex-col gap-1">
+                            <Input
+                              aria-label={`${t('hostPreferences.hostName', { defaultValue: 'Host name' })}: ${host.default_remark}`}
+                              value={host.remark}
+                              maxLength={256}
+                              placeholder={host.default_remark}
+                              isError={invalidRemark}
+                              aria-invalid={invalidRemark}
+                              onKeyDown={event => onRemarkKeyDown(event, host)}
+                              style={{ fontFamily: 'system-ui, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif' }}
+                              onChange={event => setHosts(current => current.map(item => (item.id === host.id ? { ...item, remark: event.target.value } : item)))}
+                            />
                             {customized && (
                               <span className="text-muted-foreground truncate text-xs">{t('hostPreferences.originalName', { defaultValue: 'Original: {{name}}', name: host.default_remark })}</span>
                             )}
                             {invalidRemark && <span className="text-destructive text-xs">{t('hostPreferences.remarkRequired', { defaultValue: 'A server name cannot be empty' })}</span>}
                           </div>
-                          <div className="order-1 col-start-2 row-start-1 flex shrink-0 items-center justify-end gap-2 sm:order-3 sm:col-auto sm:row-auto">
-                            <Switch
-                              checked={host.enabled}
-                              onCheckedChange={enabled => setHosts(current => current.map(item => (item.id === host.id ? { ...item, enabled } : item)))}
-                              aria-label={t('hostPreferences.enabled', { defaultValue: 'Host enabled' })}
-                              title={t('hostPreferences.enabled', { defaultValue: 'Host enabled' })}
-                            />
-                            {customized && (
+                          <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-2 border-t pt-2">
+                            <div className="flex shrink-0 items-center gap-1">
+                              {dragHandle}
                               <Button
                                 type="button"
                                 variant="outline"
                                 size="icon"
                                 className="h-8 w-8"
-                                aria-label={t('hostPreferences.resetName', { defaultValue: 'Reset name' })}
-                                title={t('hostPreferences.resetName', { defaultValue: 'Reset name' })}
-                                onClick={() => resetName(host)}
+                                aria-label={t('hostPreferences.moveUp', { defaultValue: 'Move up' })}
+                                title={t('hostPreferences.moveUp', { defaultValue: 'Move up' })}
+                                disabled={visibleIndex === 0}
+                                onClick={() => move(host, -1)}
                               >
-                                <RotateCcw className="h-4 w-4" />
+                                <ArrowUp className="h-4 w-4" />
                               </Button>
-                            )}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8"
+                                aria-label={t('hostPreferences.moveDown', { defaultValue: 'Move down' })}
+                                title={t('hostPreferences.moveDown', { defaultValue: 'Move down' })}
+                                disabled={visibleIndex === visibleHosts.length - 1}
+                                onClick={() => move(host, 1)}
+                              >
+                                <ArrowDown className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <div className="flex min-w-0 flex-wrap items-center justify-end gap-x-2 gap-y-1">
+                              {customized && (
+                                <span className="bg-primary/10 text-primary inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-1 text-[10px] sm:px-2 sm:text-xs">
+                                  <span className="block size-1.5 rounded-full bg-current sm:hidden" aria-hidden="true" />
+                                  <span>{t('hostPreferences.custom', { defaultValue: 'Custom' })}</span>
+                                </span>
+                              )}
+                              <div className="flex items-center gap-1.5">
+                                <Switch
+                                  checked={host.enabled}
+                                  onCheckedChange={enabled => setHosts(current => current.map(item => (item.id === host.id ? { ...item, enabled } : item)))}
+                                  aria-label={t('hostPreferences.enabled', { defaultValue: 'Host enabled' })}
+                                  title={t('hostPreferences.enabled', { defaultValue: 'Host enabled' })}
+                                />
+                                <span className={`text-xs ${host.enabled ? 'text-green-500' : 'text-muted-foreground'}`}>
+                                  {host.enabled ? t('hostPreferences.active', { defaultValue: 'Active' }) : t('hostPreferences.inactive', { defaultValue: 'Inactive' })}
+                                </span>
+                              </div>
+                              {customized && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  aria-label={t('hostPreferences.resetName', { defaultValue: 'Reset name' })}
+                                  title={t('hostPreferences.resetName', { defaultValue: 'Reset name' })}
+                                  onClick={() => resetName(host)}
+                                >
+                                  <RotateCcw className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       )}

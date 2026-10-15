@@ -3761,6 +3761,8 @@
     "originalName": "نام اصلی: {{name}}",
     "hostName": "نام هاست",
     "enabled": "هاست فعال باشد",
+    "active": "فعال",
+    "inactive": "غیرفعال",
     "resetName": "بازنشانی نام",
     "resetOrder": "بازنشانی ترتیب",
     "resetAll": "بازنشانی همه",
