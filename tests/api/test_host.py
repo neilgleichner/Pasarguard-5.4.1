@@ -99,6 +99,16 @@ def test_operator_can_save_private_host_preferences(access_token):
         assert preferences_response.status_code == status.HTTP_200_OK
         preferences = preferences_response.json()
         if preferences:
+            invalid_save = client.put(
+                "/api/hosts/preferences",
+                headers=operator_headers,
+                json=[{"id": preferences[0]["id"], "remark": "   ", "priority": preferences[0]["priority"]}]
+                + [
+                    {"id": host["id"], "remark": None, "priority": host["priority"]}
+                    for host in preferences[1:]
+                ],
+            )
+            assert invalid_save.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
             preferences[0]["remark"] = unique_name("private_host_name")
             preferences[0]["is_customized"] = True
         saved = client.put(

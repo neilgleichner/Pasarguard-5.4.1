@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 
 from app.db import AsyncSession, get_db
@@ -36,6 +36,16 @@ class HostPreferenceUpdate(BaseModel):
     id: int
     remark: str | None = Field(default=None, min_length=1, max_length=256)
     priority: int = Field(ge=0, le=1000000)
+
+    @field_validator("remark")
+    @classmethod
+    def validate_remark(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        value = value.strip()
+        if not value:
+            raise ValueError("Custom host remark cannot be empty")
+        return value
 
 
 async def _operator_account(db: AsyncSession, admin: AdminDetails) -> Admin:

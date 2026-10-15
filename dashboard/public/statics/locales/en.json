@@ -3778,6 +3778,7 @@
     "description": "Change the server names and order shown to you. These changes only affect your account.",
     "save": "Save changes",
     "saved": "Host preferences saved",
-    "saveFailed": "Could not save host preferences"
+    "saveFailed": "Could not save host preferences",
+    "remarkRequired": "A custom server name cannot be empty"
   }
 }
