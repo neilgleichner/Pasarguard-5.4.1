@@ -437,7 +437,7 @@ async def process_inbounds_and_tags(
             for host in hosts
         ]
         hosts.sort(key=lambda host: (host.priority, host.id))
-    if randomize_order and len(hosts) > 1:
+    if randomize_order and len(hosts) > 1 and not host_preferences:
         random.shuffle(hosts)
 
     def _resolve_host_xray_template_content(inbound: SubscriptionInboundData) -> str | None:

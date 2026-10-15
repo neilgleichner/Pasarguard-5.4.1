@@ -28,6 +28,19 @@ def make_sub_config_key(
     status = getattr(user, "status", None)
     status_key = status.value if hasattr(status, "value") else status
     inbounds = getattr(user, "inbounds", None) or ()
+    admin = getattr(user, "admin", None)
+    host_preferences = getattr(admin, "host_preferences", None) or {}
+    hosts = host_preferences.get("hosts", {})
+    host_preferences_key = tuple(
+        sorted(
+            (
+                str(host_id),
+                preference.get("remark"),
+                preference.get("priority"),
+            )
+            for host_id, preference in hosts.items()
+        )
+    )
     return (
         getattr(user, "id", None),
         config_format,
@@ -37,6 +50,7 @@ def make_sub_config_key(
         getattr(user, "data_limit", None),
         expire_key,
         tuple(inbounds),
+        host_preferences_key,
     )
 
 
