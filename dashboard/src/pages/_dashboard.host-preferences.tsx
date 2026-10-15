@@ -210,9 +210,9 @@ export default function HostPreferencesPage() {
         <Separator />
       </div>
       <div className="w-full space-y-3 p-4">
-        <div className="grid w-full grid-cols-2 gap-2">
+        <div className="flex w-full flex-col gap-2 lg:flex-row lg:items-center lg:justify-end lg:rtl:flex-row-reverse">
           {hosts.length > 8 && (
-            <div className="relative col-span-2 min-w-0">
+            <div className="relative min-w-0 lg:w-72 xl:w-80">
               <Search className="text-muted-foreground absolute start-3 top-2.5 h-4 w-4" />
               <Input
                 value={search}
@@ -223,14 +223,32 @@ export default function HostPreferencesPage() {
               />
             </div>
           )}
-          <Button type="button" variant="outline" size="sm" className="w-full gap-2 px-2 text-xs whitespace-nowrap sm:text-sm" onClick={() => setResetConfirmation('order')}>
-            <ArrowUp className="h-4 w-4 shrink-0" />
-            {t('hostPreferences.resetOrder', { defaultValue: 'Reset order' })}
-          </Button>
-          <Button type="button" variant="outline" size="sm" className="w-full gap-2 px-2 text-xs whitespace-nowrap sm:text-sm" onClick={() => setResetConfirmation('all')}>
-            <RotateCcw className="h-4 w-4 shrink-0" />
-            {t('hostPreferences.resetAll', { defaultValue: 'Reset all' })}
-          </Button>
+          <div className="grid grid-cols-2 gap-2 lg:flex lg:shrink-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full gap-2 px-2 text-xs whitespace-nowrap sm:text-sm lg:h-9 lg:w-9 lg:px-0"
+              aria-label={t('hostPreferences.resetOrder', { defaultValue: 'Reset order' })}
+              title={t('hostPreferences.resetOrder', { defaultValue: 'Reset order' })}
+              onClick={() => setResetConfirmation('order')}
+            >
+              <ArrowUp className="h-4 w-4 shrink-0" />
+              <span className="lg:sr-only">{t('hostPreferences.resetOrder', { defaultValue: 'Reset order' })}</span>
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full gap-2 px-2 text-xs whitespace-nowrap sm:text-sm lg:h-9 lg:w-9 lg:px-0"
+              aria-label={t('hostPreferences.resetAll', { defaultValue: 'Reset all' })}
+              title={t('hostPreferences.resetAll', { defaultValue: 'Reset all' })}
+              onClick={() => setResetConfirmation('all')}
+            >
+              <RotateCcw className="h-4 w-4 shrink-0" />
+              <span className="lg:sr-only">{t('hostPreferences.resetAll', { defaultValue: 'Reset all' })}</span>
+            </Button>
+          </div>
         </div>
         {isLoading ? (
           <p>{t('loading', { defaultValue: 'Loading...' })}</p>
@@ -280,7 +298,7 @@ export default function HostPreferencesPage() {
                                 type="button"
                                 variant="outline"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-8 w-8 lg:hidden"
                                 aria-label={t('hostPreferences.moveUp', { defaultValue: 'Move up' })}
                                 title={t('hostPreferences.moveUp', { defaultValue: 'Move up' })}
                                 disabled={!host.enabled || movableVisibleHosts.findIndex(item => item.id === host.id) === 0}
@@ -292,7 +310,7 @@ export default function HostPreferencesPage() {
                                 type="button"
                                 variant="outline"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-8 w-8 lg:hidden"
                                 aria-label={t('hostPreferences.moveDown', { defaultValue: 'Move down' })}
                                 title={t('hostPreferences.moveDown', { defaultValue: 'Move down' })}
                                 disabled={!host.enabled || movableVisibleHosts.findIndex(item => item.id === host.id) === movableVisibleHosts.length - 1}
