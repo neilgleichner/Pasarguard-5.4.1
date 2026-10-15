@@ -23,9 +23,7 @@ export default function HostPreferencesPage() {
   const rowRefs = useRef(new Map<number, HTMLDivElement>())
   const previousPositions = useRef<Map<number, DOMRect> | null>(null)
 
-  useEffect(() => {
-    setHosts(data.map(host => ({ ...host, remark: host.is_customized ? host.remark : '' })))
-  }, [data])
+  useEffect(() => setHosts(data), [data])
 
   const move = (index: number, delta: number) => {
     const next = [...hosts]
@@ -108,7 +106,7 @@ export default function HostPreferencesPage() {
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <Input
                 aria-label={`Host ${host.id} remark`}
-                value={host.is_customized ? host.remark : ''}
+                value={host.remark}
                 maxLength={256}
                 placeholder={host.default_remark}
                 isError={invalidRemark}
