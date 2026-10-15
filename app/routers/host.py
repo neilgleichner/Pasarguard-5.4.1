@@ -78,7 +78,7 @@ def _apply_host_preferences(hosts: list[BaseHost], account: Admin) -> list[BaseH
 @router.get("s/preferences", response_model=list[HostPreference])
 async def get_host_preferences(db: AsyncSession = Depends(get_db), admin: AdminDetails = Depends(get_current)):
     account = await _operator_account(db, admin)
-    hosts = await host_operator.get_hosts(db, HostListQuery())
+    hosts = [host for host in await host_operator.get_hosts(db, HostListQuery()) if not host.is_disabled]
     saved = account.host_preferences or {}
     saved_hosts = saved.get("hosts", {})
     preferences = [
@@ -103,14 +103,16 @@ async def save_host_preferences(
     admin: AdminDetails = Depends(get_current),
 ):
     account = await _operator_account(db, admin)
-    hosts = await host_operator.get_hosts(db, HostListQuery())
+    all_hosts = await host_operator.get_hosts(db, HostListQuery())
+    hosts = [host for host in all_hosts if not host.is_disabled]
     current_ids = {host.id for host in hosts}
     submitted_ids = [item.id for item in preferences]
     if len(submitted_ids) != len(set(submitted_ids)) or set(submitted_ids) != current_ids:
         raise HTTPException(status_code=400, detail="Submit each current host exactly once")
     saved_hosts = (account.host_preferences or {}).get("hosts", {})
     current_hosts = {host.id: host for host in hosts}
-    updated_hosts = {}
+    existing_ids = {str(host.id) for host in all_hosts}
+    updated_hosts = {host_id: value for host_id, value in saved_hosts.items() if host_id in existing_ids}
     for item in preferences:
         host_id = str(item.id)
         previous = saved_hosts.get(host_id, {})

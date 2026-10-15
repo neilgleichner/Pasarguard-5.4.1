@@ -150,6 +150,24 @@ def test_operator_can_save_private_host_preferences(access_token):
             locked_host = next(host for host in locked_save.json() if host["id"] == disabled_host["id"])
             assert locked_host["remark"] == disabled_host["remark"]
             assert locked_host["priority"] == disabled_host["priority"]
+            globally_disabled = client.post(
+                "/api/hosts/bulk/disable",
+                headers=auth_headers(access_token),
+                json={"ids": [disabled_host["id"]]},
+            )
+            assert globally_disabled.status_code == status.HTTP_200_OK
+            hidden_preferences = client.get("/api/hosts/preferences", headers=operator_headers)
+            assert hidden_preferences.status_code == status.HTTP_200_OK
+            assert all(host["id"] != disabled_host["id"] for host in hidden_preferences.json())
+            globally_enabled = client.post(
+                "/api/hosts/bulk/enable",
+                headers=auth_headers(access_token),
+                json={"ids": [disabled_host["id"]]},
+            )
+            assert globally_enabled.status_code == status.HTTP_200_OK
+            restored_preferences = client.get("/api/hosts/preferences", headers=operator_headers)
+            restored_host = next(host for host in restored_preferences.json() if host["id"] == disabled_host["id"])
+            assert restored_host["remark"] == disabled_host["remark"]
         assert client.get("/api/hosts", headers=auth_headers(access_token)).json() == baseline
     finally:
         delete_admin(access_token, operator["username"])
