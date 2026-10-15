@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
+import { VariablesPopover } from '@/components/ui/variables-popover'
 import { fetcher } from '@/service/http'
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
@@ -200,9 +201,12 @@ export default function HostPreferencesPage() {
     <div className="flex w-full flex-col items-start gap-2 pb-8">
       <div className="w-full">
         <PageHeader title="hostPreferences.title" description="hostPreferences.description" />
-        <p className="text-muted-foreground px-4 pb-3 text-sm">
-          {t('hostPreferences.subscriptionNote', { defaultValue: 'Names, order, and enabled hosts are reflected in subscription links and copied configurations for your users.' })}
-        </p>
+        <div className="flex items-start gap-2 px-4 pb-3">
+          <p className="text-muted-foreground min-w-0 flex-1 text-sm">
+            {t('hostPreferences.subscriptionNote', { defaultValue: 'Names, order, and enabled hosts are reflected in subscription links and copied configurations for your users.' })}
+          </p>
+          <VariablesPopover includeProtocolTransport side="bottom" align="end" />
+        </div>
         <Separator />
       </div>
       <div className="w-full space-y-3 p-4">
