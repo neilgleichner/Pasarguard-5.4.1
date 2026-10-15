@@ -1,4 +1,5 @@
 import PageHeader from '@/components/layout/page-header'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
@@ -15,6 +16,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 type HostPreference = { id: number; remark: string; default_remark: string; priority: number; default_priority: number; is_customized: boolean; enabled: boolean }
+type ResetConfirmation = 'order' | 'all' | null
 
 function SortableHostRow({ id, disabled, rowRef, children }: { id: number; disabled: boolean; rowRef: (element: HTMLDivElement | null) => void; children: (dragHandle: ReactNode) => ReactNode }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled })
@@ -56,6 +58,7 @@ export default function HostPreferencesPage() {
   const [hosts, setHosts] = useState<HostPreference[]>([])
   const [saving, setSaving] = useState(false)
   const [search, setSearch] = useState('')
+  const [resetConfirmation, setResetConfirmation] = useState<ResetConfirmation>(null)
   const [highlighted, setHighlighted] = useState<number | null>(null)
   const highlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const rowRefs = useRef(new Map<number, HTMLDivElement>())
@@ -100,7 +103,6 @@ export default function HostPreferencesPage() {
     return term ? hosts.filter(host => `${host.remark} ${host.default_remark}`.toLocaleLowerCase().includes(term)) : hosts
   }, [hosts, search])
   const movableVisibleHosts = useMemo(() => visibleHosts.filter(host => host.enabled), [visibleHosts])
-  const hasDisabledHosts = hosts.some(host => !host.enabled)
 
   const markMoved = (id: number) => {
     setHighlighted(id)
@@ -153,7 +155,6 @@ export default function HostPreferencesPage() {
   }
 
   const resetAll = () => {
-    if (!window.confirm(t('hostPreferences.resetAllConfirm', { defaultValue: 'Reset all custom host names, order, and enabled states?' }))) return
     capturePositions()
     setHosts(current =>
       [...current]
@@ -223,11 +224,11 @@ export default function HostPreferencesPage() {
               />
             </div>
           )}
-          <Button type="button" variant="outline" size="sm" className="w-full gap-2 px-2 text-xs whitespace-nowrap sm:text-sm" onClick={resetOrder}>
+          <Button type="button" variant="outline" size="sm" className="w-full gap-2 px-2 text-xs whitespace-nowrap sm:text-sm" onClick={() => setResetConfirmation('order')}>
             <ArrowUp className="h-4 w-4 shrink-0" />
             {t('hostPreferences.resetOrder', { defaultValue: 'Reset order' })}
           </Button>
-          <Button type="button" variant="outline" size="sm" className="w-full gap-2 px-2 text-xs whitespace-nowrap sm:text-sm" onClick={resetAll} disabled={hasDisabledHosts}>
+          <Button type="button" variant="outline" size="sm" className="w-full gap-2 px-2 text-xs whitespace-nowrap sm:text-sm" onClick={() => setResetConfirmation('all')}>
             <RotateCcw className="h-4 w-4 shrink-0" />
             {t('hostPreferences.resetAll', { defaultValue: 'Reset all' })}
           </Button>
@@ -341,6 +342,34 @@ export default function HostPreferencesPage() {
           {t('hostPreferences.save', { defaultValue: 'Save changes' })}
         </Button>
       </div>
+      <AlertDialog open={resetConfirmation !== null} onOpenChange={open => !open && setResetConfirmation(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {resetConfirmation === 'all'
+                ? t('hostPreferences.resetAllTitle', { defaultValue: 'Reset all host preferences?' })
+                : t('hostPreferences.resetOrderTitle', { defaultValue: 'Reset host order?' })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {resetConfirmation === 'all'
+                ? t('hostPreferences.resetAllConfirm', { defaultValue: 'Reset all custom host names, order, and enabled states?' })
+                : t('hostPreferences.resetOrderConfirm', { defaultValue: 'Restore the default host order? Custom names and enabled states will stay unchanged.' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('hostPreferences.cancel', { defaultValue: 'Cancel' })}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (resetConfirmation === 'all') resetAll()
+                else if (resetConfirmation === 'order') resetOrder()
+                setResetConfirmation(null)
+              }}
+            >
+              {t('hostPreferences.confirm', { defaultValue: 'OK' })}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
