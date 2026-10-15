@@ -302,16 +302,6 @@ export default function HostPreferencesPage() {
                               </Button>
                             </div>
                             <div className="flex min-w-0 flex-wrap items-center justify-end gap-x-2 gap-y-1">
-                              {customized && (
-                                <span
-                                  role="img"
-                                  className="bg-primary/10 text-primary inline-flex size-6 shrink-0 items-center justify-center rounded-full"
-                                  aria-label={t('hostPreferences.custom', { defaultValue: 'Custom' })}
-                                  title={t('hostPreferences.custom', { defaultValue: 'Custom' })}
-                                >
-                                  <span className="block size-1.5 rounded-full bg-current" aria-hidden="true" />
-                                </span>
-                              )}
                               <div className="flex items-center gap-1.5">
                                 <Switch
                                   checked={host.enabled}
